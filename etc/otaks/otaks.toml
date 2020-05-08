@@ -1,0 +1,19 @@
+#
+# default otaks config
+#
+
+[server]
+# address to bind
+host = ""
+
+# ports to bind
+port = 8086
+
+    [server.logging]
+    # server log level
+    # ERROR | WARN | INFO | DEBUG | TRACE
+    level = "INFO"
+
+    # server log location
+    # *only stdout supported*
+    #location = "stdout"
