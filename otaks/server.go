@@ -19,9 +19,9 @@ type Server struct {
 	Config  *Config
 	running bool
 
-	appServer  *app.AppServer
-	apiServer  *api.ApiServer
-	chatServer *chat.ChatServer
+	appServer  *app.Server
+	apiServer  *api.Server
+	chatServer *chat.Server
 }
 
 func NewServer(config *Config) (*Server, error) {
@@ -82,13 +82,13 @@ func signalHandler() {
 // Run starts the otaks server
 func (s *Server) Run() error {
 	log.Tracef("Initializing app server")
-	s.appServer = app.NewAppServer()
+	s.appServer = app.NewServer()
 
 	log.Tracef("Initializing api server")
-	s.apiServer = api.NewApiServer()
+	s.apiServer = api.NewServer()
 
 	log.Tracef("Initializing chat server")
-	s.chatServer = chat.NewChatServer()
+	s.chatServer = chat.NewServer()
 
 	var g run.Group
 	g.Add(func() error {

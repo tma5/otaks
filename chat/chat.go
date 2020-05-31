@@ -9,10 +9,10 @@ const (
 type Server struct {
 }
 
-// NewChatServer returns a new instance of chat server
-func NewChatServer() Server {
+// NewServer returns a new instance of chat server
+func NewServer() *Server {
 	chat := Server{}
-	return chat
+	return &chat
 }
 
 func (srv *Server) init() {

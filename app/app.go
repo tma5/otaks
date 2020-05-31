@@ -24,8 +24,8 @@ type Server struct {
 	connections map[net.Conn]struct{}
 }
 
-// NewAppServer provides a new instance of the app server
-func NewAppServer() *Server {
+// NewServer provides a new instance of the app server
+func NewServer() *Server {
 	a := Server{}
 	a.init()
 	return &a
