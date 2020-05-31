@@ -1,6 +1,8 @@
 Open TAK Server
 ===============
 
+ [![Open TAK Server](https://circleci.com/gh/tma5/otaks.svg?style=svg&circle-token=e7d61bafbb0b320b50ae5756b4fa772d19a1989e)](https://app.circleci.com/pipelines/github/tma5/otaks)
+
 Quickstart
 ----------
 
