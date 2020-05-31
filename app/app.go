@@ -13,7 +13,8 @@ import (
 	"sync"
 )
 
-type AppServer struct {
+// Server provides the app server state
+type Server struct {
 	Addr string
 
 	// Shutdown handling
@@ -23,36 +24,39 @@ type AppServer struct {
 	connections map[net.Conn]struct{}
 }
 
-func NewAppServer() *AppServer {
-	a := AppServer{}
+// NewAppServer provides a new instance of the app server
+func NewAppServer() *Server {
+	a := Server{}
 	a.init()
 	return &a
 }
 
-func (a *AppServer) init() {
+func (a *Server) init() {
 	a.shutdown = make(chan struct{})
 	a.connections = make(map[net.Conn]struct{})
 }
 
-func (a *AppServer) Run() error {
-	return a.ListenAndServe()
+// Run starts the app server
+func (a *Server) Run() error {
+	return a.listenAndServe()
 }
 
-func (a *AppServer) IsRunning() bool {
+// IsRunning provides the state of the server
+func (a *Server) IsRunning() bool {
 	return a.started
 }
 
-func (a *AppServer) ListenAndServe() error {
+func (a *Server) listenAndServe() error {
 	log.Trace("Starting app server on :8087")
 	a.started = true
 	ln, err := net.Listen("tcp", ":8087")
 	if err != nil {
 		return err
 	}
-	return a.ServeTCP(ln)
+	return a.serveTCP(ln)
 }
 
-func (a *AppServer) ServeTCP(ln net.Listener) error {
+func (a *Server) serveTCP(ln net.Listener) error {
 	defer ln.Close()
 
 	wg := sync.WaitGroup{}
@@ -76,14 +80,14 @@ func (a *AppServer) ServeTCP(ln net.Listener) error {
 
 		a.connections[c] = struct{}{}
 		wg.Add(1)
-		go a.ServeTCPConn(&wg, c)
+		go a.serveTCPConn(&wg, c)
 	}
 
 	log.Trace("App server on :8087 died")
 	return fmt.Errorf("App server on :8087 died")
 }
 
-func (a *AppServer) ServeTCPConn(wg *sync.WaitGroup, c net.Conn) {
+func (a *Server) serveTCPConn(wg *sync.WaitGroup, c net.Conn) {
 	defer func() {
 		log.Tracef("closing connection from %s", c.RemoteAddr().String())
 		delete(a.connections, c)

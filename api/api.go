@@ -8,14 +8,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type ApiServer struct {
+// Server provides the state of the api server
+type Server struct {
 }
 
-func NewApiServer() *ApiServer {
-	return &ApiServer{}
+// NewServer provides a new instance of an api server
+func NewServer() *Server {
+	return &Server{}
 }
 
-func (a *ApiServer) Run() error {
+// Run begins the server
+func (a *Server) Run() error {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +31,7 @@ func (a *ApiServer) Run() error {
 	}).Methods("GET")
 
 	// TODO: marti routes
-	router.HandleFunc("/Marti/api/version/config", getApiVersionConfig).Methods("GET")
+	router.HandleFunc("/Marti/api/version/config", getAPIVersionConfig).Methods("GET")
 	router.HandleFunc("/Marti/api/clientEndPoints", getClientEndpoints).Methods("GET")
 	router.HandleFunc("/Marti/api/sync/metadata/{hash}/tool", modifyDataPackage).Methods("PUT")
 	router.HandleFunc("/Marti/api/sync/metadata/{hash}/tool", getDataPackage).Methods("GET")

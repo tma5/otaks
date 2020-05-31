@@ -10,26 +10,27 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Version is the api version
 const Version = "undefined"
 
 func getVersionString() string {
 	return fmt.Sprintf("otaks-%s", Version)
 }
 
-type VersionDetail struct {
-	ApiVersion string            `json:"version"`
+type versionDetail struct {
+	APIVersion string            `json:"version"`
 	Type       string            `json:"type"`
-	Data       VersionDetailData `json:"data"`
+	Data       versionDetailData `json:"data"`
 	Node       string            `json:"nodeId"`
 }
 
-type VersionDetailData struct {
+type versionDetailData struct {
 	OtaksVersion string `json:"version"`
-	ApiVersion   string `json:"api"`
+	APIVersion   string `json:"api"`
 	Hostname     string `json:"hostname"`
 }
 
-type DataPackage struct {
+type dataPackage struct {
 	UID                string `json:"UID"`
 	Name               string `json:"Name"`
 	Hash               string `json:"Hash"`
@@ -55,29 +56,29 @@ func getOutboundIP() string {
 	return localAddr.IP.String()
 }
 
-func getVersionDetail() VersionDetail {
+func getversionDetail() versionDetail {
 	v := getVersionString()
 	i := getOutboundIP()
 
-	return VersionDetail{
-		ApiVersion: "2",
+	return versionDetail{
+		APIVersion: "2",
 		Type:       "ServerConfig",
-		Data: VersionDetailData{
+		Data: versionDetailData{
 			OtaksVersion: v,
-			ApiVersion:   "2",
+			APIVersion:   "2",
 			Hostname:     i,
 		},
 		Node: "otaks",
 	}
 }
 
-func getApiVersionConfig(w http.ResponseWriter, r *http.Request) {
+func getAPIVersionConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	v := getVersionDetail()
+	v := getversionDetail()
 	json.NewEncoder(w).Encode(v)
 }
 
-func getApiVersion(w http.ResponseWriter, r *http.Request) {
+func getAPIVersion(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/text")
 	v := getVersionString()
 	w.Write([]byte(v))
