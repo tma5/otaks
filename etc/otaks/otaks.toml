@@ -6,8 +6,11 @@
 # address to bind
 host = ""
 
-# ports to bind
-port = 8086
+    [server.app]
+    port = 8086
+
+    [server.api]
+    port = 8080
 
     [server.logging]
     # server log level

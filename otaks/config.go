@@ -7,9 +7,18 @@ import (
 )
 
 type serverConfig struct {
-	Host     string              `toml:"host"`
-	Port     int              	 `toml:"port"`
-	Logging  serverLoggingConfig `toml:"logging"`
+	Host    string              `toml:"host"`
+	App     serverAppConfig     `toml:"app"`
+	API     serverAPIConfig     `toml:"api"`
+	Logging serverLoggingConfig `toml:"logging"`
+}
+
+type serverAppConfig struct {
+	Port int `toml:"port"`
+}
+
+type serverAPIConfig struct {
+	Port int `toml:"port"`
 }
 
 type serverLoggingConfig struct {
@@ -19,7 +28,7 @@ type serverLoggingConfig struct {
 
 // Config describes the otaks configuration
 type Config struct {
-	Server    serverConfig    `toml:"server"`
+	Server serverConfig `toml:"server"`
 }
 
 // NewConfig parses arguments to create a Config

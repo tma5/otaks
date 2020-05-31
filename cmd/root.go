@@ -11,7 +11,7 @@ import (
 
 var (
 	host           string
-	port	       int
+	port           int
 	configLocation string
 	logLevel       string
 
@@ -20,8 +20,8 @@ var (
 
 const (
 	defaultConfigLocation = "/etc/otaks/otaks.toml"
-	defaultHost           = "127.0.0.1"
-	defaultPort           = 8086
+	defaultHost           = "0.0.0.0"
+	defaultPort           = 8087
 	defaultLogLevel       = "info"
 )
 
@@ -48,7 +48,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&configLocation, "config", "c", defaultConfigLocation, "configuration file")
 	RootCmd.PersistentFlags().StringVarP(&host, "host", "h", defaultHost, "host to bind")
 	RootCmd.PersistentFlags().IntVarP(&port, "port", "p", defaultPort, "port")
-	RootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", defaultLogLevel, "log level [ERROR|WARN|INFO|DEBUG|TRACE]")
+	RootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "l", defaultLogLevel, "log level [ERROR|WARN|INFO|DEBUG|TRACE]")
 
 	RootCmd.AddCommand(serveCmd)
 }

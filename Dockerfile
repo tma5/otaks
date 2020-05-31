@@ -17,7 +17,7 @@ COPY --from=builder go/src/github.com/tma5/otaks/bin/otaks .
 COPY etc /etc/
 
 EXPOSE 8080
-EXPOSE 8086
+EXPOSE 8087
 
 ENTRYPOINT [ "./otaks" ]
 CMD [ "serve"]

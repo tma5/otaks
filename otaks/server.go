@@ -1,38 +1,33 @@
 package otaks
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
+	"github.com/oklog/run"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
+	"github.com/tma5/otaks/api"
+	"github.com/tma5/otaks/app"
+	"github.com/tma5/otaks/chat"
 )
 
 // Server defines the runtime state of the otaks service
 type Server struct {
-	mutex sync.RWMutex
+	Logger  *logrus.Logger
+	Config  *Config
+	running bool
 
-	started bool
-
-	Logger    *logrus.Logger
-	Config    *Config
-	
-	cotServer  *CotServer
+	appServer  *app.AppServer
+	apiServer  *api.ApiServer
+	chatServer *chat.ChatServer
 }
 
 func NewServer(config *Config) (*Server, error) {
 	s := new(Server)
 	s.Config = config
-	s.bootstrap()
 
-	return s, nil
-}
-
-// InitServer() initializes a otaks service definition
-func (s *Server) bootstrap() {
 	log.SetOutput(os.Stdout)
 	logLevel, err := log.ParseLevel(s.Config.Server.Logging.Level)
 	if err != nil {
@@ -41,37 +36,25 @@ func (s *Server) bootstrap() {
 		log.SetLevel(logLevel)
 	}
 
-	host := s.Config.Server.Host
-	port := s.Config.Server.Port
+	s.running = true
 
-	log.Tracef("Initializing COT Server")
-	s.cotServer = &CotServer{
-		Addr:    fmt.Sprintf("%s:%d", host, port),
-		Otaks: s,
-	}
-	log.Infof("Initialized COT Server")
+	return s, nil
 }
 
 // Shutdown gracefully shuts down the otaks server
 func (s *Server) Shutdown() {
-	s.cotServer.Shutdown()
+	s.running = false
 }
 
-// ListenAndServe starts the otaks server
-func (s *Server) ListenAndServe() error {
-	go s.cotServer.ListenAndServe()
-
+func signalHandler() {
 	sigc := make(chan os.Signal)
 	signal.Notify(sigc,
 		syscall.SIGINT,
 		syscall.SIGHUP,
-		syscall.SIGUSR1,
-		syscall.SIGUSR2,
-		//syscall.SIGINFO, // TODO: SIGINFO doesn't exist in *nix, just BSD?
 		syscall.SIGTERM,
 	)
-
 	exit := make(chan int)
+
 	go func() {
 		for {
 			sigv := <-sigc
@@ -83,19 +66,8 @@ func (s *Server) ListenAndServe() error {
 				// TODO: Implement SIGHUP
 				log.Infof("SIGHUP received, reloading...")
 				log.Warnf("Not yet implemented!")
-			case syscall.SIGUSR1:
-				// TODO: Implement SIGUSR1
-				log.Infof("SIGUSR1 received, reloading...")
-				log.Warnf("Not yet implemented!")
-			case syscall.SIGUSR2:
-				// TODO: Implement SIGUSR2
-				log.Infof("SIGUSR1 received, reloading...")
-				log.Warnf("Not yet implemented!")
-			// case syscall.SIGINFO:
-			// 	s.printInfo()
 			case syscall.SIGTERM:
 				log.Infof("SIGTERM received, stopping...")
-				s.Shutdown()
 				exit <- 0
 			default:
 				log.Errorf("Signal received, unknown type")
@@ -105,6 +77,40 @@ func (s *Server) ListenAndServe() error {
 
 	code := <-exit
 	os.Exit(code)
+}
 
-	return nil
+// Run starts the otaks server
+func (s *Server) Run() error {
+	log.Tracef("Initializing app server")
+	s.appServer = app.NewAppServer()
+
+	log.Tracef("Initializing api server")
+	s.apiServer = api.NewApiServer()
+
+	log.Tracef("Initializing chat server")
+	s.chatServer = chat.NewChatServer()
+
+	var g run.Group
+	g.Add(func() error {
+		log.Tracef("Starting app server")
+		return s.appServer.Run()
+	}, func(err error) {
+		log.Error(err)
+	})
+
+	g.Add(func() error {
+		log.Tracef("Starting api server")
+		return s.apiServer.Run()
+	}, func(err error) {
+		log.Error(err)
+	})
+
+	g.Add(func() error {
+		log.Tracef("Starting chat server")
+		return s.chatServer.Run()
+	}, func(err error) {
+		log.Error(err)
+	})
+
+	return g.Run()
 }

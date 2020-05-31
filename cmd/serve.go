@@ -3,8 +3,8 @@ package cmd
 import (
 	"log"
 
-	"github.com/tma5/otaks/otaks"
 	"github.com/spf13/cobra"
+	"github.com/tma5/otaks/otaks"
 )
 
 var (
@@ -31,7 +31,7 @@ func serve(cmd *cobra.Command, args []string) {
 	}
 
 	if port != defaultPort {
-		config.Server.Port = port
+		config.Server.App.Port = port
 	}
 
 	if logLevel != defaultLogLevel {
@@ -43,5 +43,5 @@ func serve(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	log.Fatal(server.ListenAndServe())
+	log.Fatal("serve:", server.Run())
 }
