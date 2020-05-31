@@ -1,4 +1,4 @@
-package otaks
+package config
 
 import (
 	"io/ioutil"

@@ -4,9 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/tma5/otaks/otaks"
-
 	"github.com/spf13/cobra"
+	"github.com/tma5/otaks/config"
 )
 
 var (
@@ -43,7 +42,7 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&helpFlag, "help", "", false, "Help for otaks")
 
 	// set version on root cmd to cheat cobra version into play
-	RootCmd.Version = otaks.Version
+	RootCmd.Version = config.Version
 
 	RootCmd.PersistentFlags().StringVarP(&configLocation, "config", "c", defaultConfigLocation, "configuration file")
 	RootCmd.PersistentFlags().StringVarP(&host, "host", "h", defaultHost, "host to bind")

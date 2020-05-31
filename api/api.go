@@ -6,15 +6,19 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"github.com/tma5/otaks/config"
 )
 
 // Server provides the state of the api server
 type Server struct {
+	config *config.Config
 }
 
 // NewServer provides a new instance of an api server
-func NewServer() *Server {
-	return &Server{}
+func NewServer(config *config.Config) *Server {
+	return &Server{
+		config: config,
+	}
 }
 
 // Run begins the server

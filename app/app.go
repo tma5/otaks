@@ -7,33 +7,41 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/tma5/otaks/config"
 	"github.com/tma5/otaks/cot"
 
 	"net"
 	"sync"
 )
 
+type connectionData struct {
+}
+
 // Server provides the app server state
 type Server struct {
 	Addr string
+
+	config *config.Config
 
 	// Shutdown handling
 	lock        sync.RWMutex
 	started     bool
 	shutdown    chan struct{}
-	connections map[net.Conn]struct{}
+	connections map[net.Conn]connectionData
 }
 
 // NewServer provides a new instance of the app server
-func NewServer() *Server {
-	a := Server{}
+func NewServer(config *config.Config) *Server {
+	a := Server{
+		config: config,
+	}
 	a.init()
 	return &a
 }
 
 func (a *Server) init() {
 	a.shutdown = make(chan struct{})
-	a.connections = make(map[net.Conn]struct{})
+	a.connections = make(map[net.Conn]connectionData)
 }
 
 // Run starts the app server
@@ -53,10 +61,10 @@ func (a *Server) listenAndServe() error {
 	if err != nil {
 		return err
 	}
-	return a.serveTCP(ln)
+	return a.listen(ln)
 }
 
-func (a *Server) serveTCP(ln net.Listener) error {
+func (a *Server) listen(ln net.Listener) error {
 	defer ln.Close()
 
 	wg := sync.WaitGroup{}
@@ -78,16 +86,16 @@ func (a *Server) serveTCP(ln net.Listener) error {
 
 		log.Tracef("handling app connection for %s", c.RemoteAddr().String())
 
-		a.connections[c] = struct{}{}
+		a.connections[c] = connectionData{}
 		wg.Add(1)
-		go a.serveTCPConn(&wg, c)
+		go a.handleConnection(&wg, c)
 	}
 
 	log.Trace("App server on :8087 died")
 	return fmt.Errorf("App server on :8087 died")
 }
 
-func (a *Server) serveTCPConn(wg *sync.WaitGroup, c net.Conn) {
+func (a *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 	defer func() {
 		log.Tracef("closing connection from %s", c.RemoteAddr().String())
 		delete(a.connections, c)
@@ -139,6 +147,8 @@ func (a *Server) serveTCPConn(wg *sync.WaitGroup, c net.Conn) {
 			log.WithFields(log.Fields{
 				"device":   event.UID,
 				"callsign": event.Detail.UID.Droid,
+				"type":     event.Type,
+				"how":      event.How,
 				"lat":      event.Point.Latitude,
 				"lon":      event.Point.Longitude,
 			}).Debug()

@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/spf13/cobra"
+	"github.com/tma5/otaks/config"
 	"github.com/tma5/otaks/otaks"
 )
 
@@ -21,7 +22,7 @@ func init() {
 }
 
 func serve(cmd *cobra.Command, args []string) {
-	config, err := otaks.NewConfig(configLocation)
+	config, err := config.NewConfig(configLocation)
 	if err != nil {
 		log.Fatal(err)
 	}

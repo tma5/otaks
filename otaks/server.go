@@ -11,12 +11,13 @@ import (
 	"github.com/tma5/otaks/api"
 	"github.com/tma5/otaks/app"
 	"github.com/tma5/otaks/chat"
+	"github.com/tma5/otaks/config"
 )
 
 // Server defines the runtime state of the otaks service
 type Server struct {
 	Logger  *logrus.Logger
-	Config  *Config
+	Config  *config.Config
 	running bool
 
 	appServer  *app.Server
@@ -24,7 +25,7 @@ type Server struct {
 	chatServer *chat.Server
 }
 
-func NewServer(config *Config) (*Server, error) {
+func NewServer(config *config.Config) (*Server, error) {
 	s := new(Server)
 	s.Config = config
 
@@ -82,13 +83,13 @@ func signalHandler() {
 // Run starts the otaks server
 func (s *Server) Run() error {
 	log.Tracef("Initializing app server")
-	s.appServer = app.NewServer()
+	s.appServer = app.NewServer(s.Config)
 
 	log.Tracef("Initializing api server")
-	s.apiServer = api.NewServer()
+	s.apiServer = api.NewServer(s.Config)
 
 	log.Tracef("Initializing chat server")
-	s.chatServer = chat.NewServer()
+	s.chatServer = chat.NewServer(s.Config)
 
 	var g run.Group
 	g.Add(func() error {
