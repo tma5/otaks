@@ -9,10 +9,8 @@ const (
 type ChatServer struct {
 }
 
-func NewChatServer() *ChatServer {
-	srv := ChatServer{}
-	srv.init()
-	return &srv
+func NewChatServer() ChatServer {
+
 }
 
 func (srv *ChatServer) init() {
@@ -20,15 +18,11 @@ func (srv *ChatServer) init() {
 }
 
 func (srv *ChatServer) Run() error {
-	return nil
+
 }
 
 func (srv *ChatServer) ListenAndServe() error {
+	log.Tracef("Starting chat server on %s", MULTICAST_CHAT_ADDR)
 	ln, err := net.Listen("udp", MULTICAST_CHAT_ADDR)
-	defer ln.Close()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	net.ListenMulticastUDP()
 }
