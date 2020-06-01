@@ -7,12 +7,15 @@ FAQ
 ---
 
 **Does this work yet?**
+
 Nope.
 
 **What's the roadmap?**
+
 There is none so far. Basic functionality is the current goal. 
 
 **Why isn't X implemented?**
+
 I'm not sponsored. I don't have SDK access. I'm hacking on this in spurts of free time. This is purely reverse engineered off public CoT docs, cribbing how [FreeTakServer](https://github.com/Tapawingo/FreeTakServer) is implemented thus far, and slurping down network traffic from ATAK 4.0.0.1.
 
 
