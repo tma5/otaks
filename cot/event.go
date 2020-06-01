@@ -59,6 +59,8 @@ type Event struct {
 	QOS     string `xml:"qos,omitempty"`
 	Access  string `xml:"access,omitempty"`
 	Detail  Detail `xml:"detail,omitempty"`
+
+	Origin string
 }
 
 // NewEvent gets a blank event

@@ -24,55 +24,60 @@ type Server struct {
 	config *config.Config
 
 	// Shutdown handling
-	lock        sync.RWMutex
-	started     bool
-	shutdown    chan struct{}
+	lock     sync.RWMutex
+	started  bool
+	shutdown chan struct{}
+
 	connections map[net.Conn]connectionData
+	events      []cot.Event
 }
 
 // NewServer provides a new instance of the app server
 func NewServer(config *config.Config) *Server {
-	a := Server{
+	srv := Server{
 		config: config,
 	}
-	a.init()
-	return &a
+	srv.init()
+	return &srv
 }
 
-func (a *Server) init() {
-	a.shutdown = make(chan struct{})
-	a.connections = make(map[net.Conn]connectionData)
+func (srv *Server) init() {
+	srv.shutdown = make(chan struct{})
+	srv.connections = make(map[net.Conn]connectionData)
+	srv.events = make([]cot.Event, 0)
 }
 
 // Run starts the app server
-func (a *Server) Run() error {
-	return a.listenAndServe()
+func (srv *Server) Run() error {
+	return srv.listenAndServe()
 }
 
 // IsRunning provides the state of the server
-func (a *Server) IsRunning() bool {
-	return a.started
+func (srv *Server) IsRunning() bool {
+	return srv.started
 }
 
-func (a *Server) listenAndServe() error {
+func (srv *Server) listenAndServe() error {
 	log.Trace("Starting app server on :8087")
-	a.started = true
+	srv.started = true
 	ln, err := net.Listen("tcp", ":8087")
 	if err != nil {
 		return err
 	}
-	return a.listen(ln)
+	return srv.listen(ln)
 }
 
-func (a *Server) listen(ln net.Listener) error {
+func (srv *Server) listen(ln net.Listener) error {
 	defer ln.Close()
 
 	wg := sync.WaitGroup{}
 
-	for a.IsRunning() {
+	go srv.retransmitEvents()
+
+	for srv.IsRunning() {
 		c, err := ln.Accept()
 		if err != nil {
-			if !a.IsRunning() {
+			if !srv.IsRunning() {
 				return nil
 			}
 
@@ -86,19 +91,45 @@ func (a *Server) listen(ln net.Listener) error {
 
 		log.Tracef("handling app connection for %s", c.RemoteAddr().String())
 
-		a.connections[c] = connectionData{}
+		srv.connections[c] = connectionData{}
 		wg.Add(1)
-		go a.handleConnection(&wg, c)
+		go srv.handleConnection(&wg, c)
 	}
 
 	log.Trace("App server on :8087 died")
 	return fmt.Errorf("App server on :8087 died")
 }
 
-func (a *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
+func (srv *Server) retransmitEvents() {
+	for srv.IsRunning() {
+		if len(srv.events) > 0 {
+			event := srv.events[0]
+			srv.events = srv.events[1:]
+
+			for r := range srv.connections {
+				if r.RemoteAddr().String() == event.Origin {
+					continue
+				}
+				log.Tracef("retransmitting event from %s to %s", event.Origin, r.RemoteAddr().String())
+				e, err := xml.Marshal(event)
+				if err != nil {
+					log.Error("problem repackaging event: ", err)
+					continue
+				}
+				_, err = r.Write(e)
+				if err != nil {
+					log.Error("problem retransmitting event: ", err)
+					break
+				}
+			}
+		}
+	}
+}
+
+func (srv *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 	defer func() {
 		log.Tracef("closing connection from %s", c.RemoteAddr().String())
-		delete(a.connections, c)
+		delete(srv.connections, c)
 		wg.Done()
 		c.Close()
 	}()
@@ -140,11 +171,13 @@ func (a *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 		if len(buf) > 0 {
 			var event cot.Event
 			xml.Unmarshal(buf, &event)
+			event.Origin = c.RemoteAddr().String()
 			log.WithFields(log.Fields{
 				"size": len(buf),
 				"raw":  string(buf),
 			}).Trace()
 			log.WithFields(log.Fields{
+				"origin":   event.Origin,
 				"device":   event.UID,
 				"callsign": event.Detail.UID.Droid,
 				"type":     event.Type,
@@ -152,6 +185,13 @@ func (a *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 				"lat":      event.Point.Latitude,
 				"lon":      event.Point.Longitude,
 			}).Debug()
+
+			// handle event based on type
+			switch event.Type {
+			case cot.PingEvent:
+
+			}
+			srv.events = append(srv.events, event)
 
 			//wtf
 			c.Write(buf)

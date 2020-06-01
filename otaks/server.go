@@ -96,21 +96,27 @@ func (s *Server) Run() error {
 		log.Tracef("Starting app server")
 		return s.appServer.Run()
 	}, func(err error) {
-		log.Error(err)
+		if err != nil {
+			log.Error(err)
+		}
 	})
 
 	g.Add(func() error {
 		log.Tracef("Starting api server")
 		return s.apiServer.Run()
 	}, func(err error) {
-		log.Error(err)
+		if err != nil {
+			log.Error(err)
+		}
 	})
 
 	g.Add(func() error {
 		log.Tracef("Starting chat server")
 		return s.chatServer.Run()
 	}, func(err error) {
-		log.Error(err)
+		if err != nil {
+			log.Error(err)
+		}
 	})
 
 	return g.Run()
