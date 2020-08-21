@@ -1,14 +1,15 @@
 package app
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/tma5/otaks/config"
 	"github.com/tma5/otaks/cot"
+	"github.com/tma5/otaks/state"
 
 	"net"
 	"sync"
@@ -21,7 +22,7 @@ type connectionData struct {
 type Server struct {
 	Addr string
 
-	config *config.Config
+	state *state.State
 
 	// Shutdown handling
 	lock     sync.RWMutex
@@ -33,9 +34,9 @@ type Server struct {
 }
 
 // NewServer provides a new instance of the app server
-func NewServer(config *config.Config) *Server {
+func NewServer(state *state.State) *Server {
 	srv := Server{
-		config: config,
+		state: state,
 	}
 	srv.init()
 	return &srv
@@ -102,27 +103,30 @@ func (srv *Server) listen(ln net.Listener) error {
 
 func (srv *Server) retransmitEvents() {
 	for srv.IsRunning() {
-		if len(srv.events) > 0 {
-			event := srv.events[0]
-			srv.events = srv.events[1:]
 
-			for r := range srv.connections {
-				if r.RemoteAddr().String() == event.Origin {
-					continue
-				}
-				log.Tracef("retransmitting event from %s to %s", event.Origin, r.RemoteAddr().String())
-				e, err := xml.Marshal(event)
-				if err != nil {
-					log.Error("problem repackaging event: ", err)
-					continue
-				}
-				_, err = r.Write(e)
-				if err != nil {
-					log.Error("problem retransmitting event: ", err)
-					break
-				}
+		event, err := srv.state.NextEvent()
+		if err != nil {
+			continue
+		}
+
+		for r := range srv.connections {
+			if r.RemoteAddr().String() == event.Origin {
+				continue
+			}
+			log.Tracef("retransmitting event from %s to %s", event.Origin, r.RemoteAddr().String())
+			e, err := xml.Marshal(event)
+			if err != nil {
+				log.Error("problem repackaging event: ", err)
+				continue
+			}
+			log.Tracef("transmitting event: %+v", string(e))
+			_, err = r.Write(e)
+			if err != nil {
+				log.Error("problem retransmitting event: ", err)
+				break
 			}
 		}
+
 	}
 }
 
@@ -134,8 +138,7 @@ func (srv *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 		c.Close()
 	}()
 
-	timeoutDuration := 30 * time.Second
-
+	// handle keepalives
 	go func() {
 		for {
 			time.Sleep(time.Second * 15)
@@ -156,45 +159,43 @@ func (srv *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 	}()
 
 	for {
-		c.SetDeadline(time.Now().Add(timeoutDuration))
-		buf := make([]byte, 0, 1024) // big buffer
-		_, err := c.Read(buf)
+		var buf bytes.Buffer
+		io.Copy(&buf, c)
+
+		if buf.Len() == 0 {
+			continue
+		}
+
+		var event cot.Event
+		err := xml.Unmarshal(buf.Bytes(), &event)
 		if err != nil {
-			if err == io.EOF {
-				log.Tracef("%s reached EOF", c.RemoteAddr().String())
-				continue
-			}
-			log.Error("read error:", err)
-			break
+			log.Error("failed to interpret event", err)
+			continue
 		}
+		event.Origin = c.RemoteAddr().String()
 
-		if len(buf) > 0 {
-			var event cot.Event
-			xml.Unmarshal(buf, &event)
-			event.Origin = c.RemoteAddr().String()
-			log.WithFields(log.Fields{
-				"size": len(buf),
-				"raw":  string(buf),
-			}).Trace()
-			log.WithFields(log.Fields{
-				"origin":   event.Origin,
-				"device":   event.UID,
-				"callsign": event.Detail.UID.Droid,
-				"type":     event.Type,
-				"how":      event.How,
-				"lat":      event.Point.Latitude,
-				"lon":      event.Point.Longitude,
-			}).Debug()
+		// // handle event based on type
+		// switch event.Type {
+		// case cot.PingEvent:
+		// 	c.Write(buf.Bytes())
+		// }
 
-			// handle event based on type
-			switch event.Type {
-			case cot.PingEvent:
+		log.WithFields(log.Fields{
+			"size": buf.Len(),
+			"raw":  buf.String(),
+		}).Trace()
+		log.WithFields(log.Fields{
+			"origin":   event.Origin,
+			"device":   event.UID,
+			"callsign": event.Detail.UID.Droid,
+			"type":     event.Type,
+			"how":      event.How,
+			"lat":      event.Point.Latitude,
+			"lon":      event.Point.Longitude,
+		}).Debug()
+		srv.events = append(srv.events, event)
 
-			}
-			srv.events = append(srv.events, event)
-
-			//wtf
-			c.Write(buf)
-		}
+		//wtf
+		//c.Write(buf.Bytes())
 	}
 }

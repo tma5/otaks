@@ -12,26 +12,32 @@ import (
 	"github.com/tma5/otaks/app"
 	"github.com/tma5/otaks/chat"
 	"github.com/tma5/otaks/config"
+	"github.com/tma5/otaks/state"
+	"github.com/tma5/otaks/web"
 )
 
 // Server defines the runtime state of the otaks service
 type Server struct {
 	Logger  *logrus.Logger
-	Config  *config.Config
+	State   *state.State
 	running bool
 
 	appServer  *app.Server
 	apiServer  *api.Server
 	chatServer *chat.Server
+	webServer  *web.Server
 }
 
+// NewServer returns a new server instance
 func NewServer(config *config.Config) (*Server, error) {
 	s := new(Server)
-	s.Config = config
-
+	s.State = state.NewState(config)
+	log.Printf("%+v", s.State)
 	log.SetOutput(os.Stdout)
-	logLevel, err := log.ParseLevel(s.Config.Server.Logging.Level)
+	log.Printf("s.State.Config.Server.Logging.Level: %s")
+	logLevel, err := log.ParseLevel(s.State.Config.Server.Logging.Level)
 	if err != nil {
+		log.Error("problem setting loglevel", err)
 		log.SetLevel(logrus.InfoLevel)
 	} else {
 		log.SetLevel(logLevel)
@@ -83,13 +89,16 @@ func signalHandler() {
 // Run starts the otaks server
 func (s *Server) Run() error {
 	log.Tracef("Initializing app server")
-	s.appServer = app.NewServer(s.Config)
+	s.appServer = app.NewServer(s.State)
 
 	log.Tracef("Initializing api server")
-	s.apiServer = api.NewServer(s.Config)
+	s.apiServer = api.NewServer(s.State)
 
 	log.Tracef("Initializing chat server")
-	s.chatServer = chat.NewServer(s.Config)
+	s.chatServer = chat.NewServer(s.State)
+
+	log.Tracef("Initializing web server")
+	s.webServer = web.NewServer(s.State)
 
 	var g run.Group
 	g.Add(func() error {
@@ -113,6 +122,15 @@ func (s *Server) Run() error {
 	g.Add(func() error {
 		log.Tracef("Starting chat server")
 		return s.chatServer.Run()
+	}, func(err error) {
+		if err != nil {
+			log.Error(err)
+		}
+	})
+
+	g.Add(func() error {
+		log.Trace("Starting web server")
+		return s.webServer.Run()
 	}, func(err error) {
 		if err != nil {
 			log.Error(err)

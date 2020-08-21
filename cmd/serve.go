@@ -39,10 +39,11 @@ func serve(cmd *cobra.Command, args []string) {
 		config.Server.Logging.Level = logLevel
 	}
 
+	log.Printf("%+v", config)
 	server, err := otaks.NewServer(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Fatal("serve:", server.Run())
+	log.Fatal(server.Run())
 }

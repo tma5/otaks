@@ -1,6 +1,6 @@
 package chat
 
-import "github.com/tma5/otaks/config"
+import "github.com/tma5/otaks/state"
 
 const (
 	// MulticastChatAddress provides the multicast chat endpoint
@@ -9,13 +9,13 @@ const (
 
 // Server contains the chat server state
 type Server struct {
-	config *config.Config
+	state *state.State
 }
 
 // NewServer returns a new instance of chat server
-func NewServer(config *config.Config) *Server {
+func NewServer(state *state.State) *Server {
 	chat := Server{
-		config: config,
+		state: state,
 	}
 	return &chat
 }

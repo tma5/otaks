@@ -21,7 +21,7 @@ const (
 	defaultConfigLocation = "/etc/otaks/otaks.toml"
 	defaultHost           = "0.0.0.0"
 	defaultPort           = 8087
-	defaultLogLevel       = "info"
+	defaultLogLevel       = "INFO"
 )
 
 var RootCmd = &cobra.Command{

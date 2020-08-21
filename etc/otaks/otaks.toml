@@ -12,6 +12,9 @@ host = ""
     [server.api]
     port = 8080
 
+    [server.web]
+    port = 8888
+
     [server.logging]
     # server log level
     # ERROR | WARN | INFO | DEBUG | TRACE

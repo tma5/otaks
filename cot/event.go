@@ -54,13 +54,13 @@ type Event struct {
 	Start   string    `xml:"start,attr"`
 	Stale   string    `xml:"stale,attr"`
 	How     HowType   `xml:"how,attr"`
-	Point   Point
-	Opex    string `xml:"opex,omitempty"`
-	QOS     string `xml:"qos,omitempty"`
-	Access  string `xml:"access,omitempty"`
-	Detail  Detail `xml:"detail,omitempty"`
+	Point   Point     `xml:"point"`
+	Opex    string    `xml:"opex,omitempty"`
+	QOS     string    `xml:"qos,omitempty"`
+	Access  string    `xml:"access,omitempty"`
+	Detail  Detail    `xml:"detail,omitempty"`
 
-	Origin string
+	Origin string `xml:"-"`
 }
 
 // NewEvent gets a blank event

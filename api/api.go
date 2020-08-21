@@ -6,23 +6,23 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"github.com/tma5/otaks/config"
+	"github.com/tma5/otaks/state"
 )
 
 // Server provides the state of the api server
 type Server struct {
-	config *config.Config
+	state *state.State
 }
 
 // NewServer provides a new instance of an api server
-func NewServer(config *config.Config) *Server {
+func NewServer(state *state.State) *Server {
 	return &Server{
-		config: config,
+		state: state,
 	}
 }
 
 // Run begins the server
-func (a *Server) Run() error {
+func (srv *Server) Run() error {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +47,9 @@ func (a *Server) Run() error {
 
 	router.HandleFunc("/Marti/vcm", getVideoLinks).Methods("GET")
 	router.HandleFunc("/Marti/vcm", insertVideoLink).Methods("POST")
+
+	// otaks rest api
+	router.HandleFunc("/otaks/events", srv.state.QueueEventFromHttpRequest).Methods("POST")
 
 	log.Trace("Initializing api server on :8080")
 	return http.ListenAndServe(":8080", router)
