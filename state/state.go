@@ -2,7 +2,6 @@ package state
 
 import (
 	"encoding/xml"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -14,34 +13,16 @@ import (
 type State struct {
 	Config *config.Config
 	mux    sync.Mutex
-	Events []cot.Event
+	Events chan cot.Event
 }
 
 func NewState(config *config.Config) *State {
 	state := &State{
 		Config: config,
-		Events: make([]cot.Event, 0),
+		Events: make(chan cot.Event),
 	}
 
 	return state
-}
-
-func (s *State) QueueEvent(event cot.Event) {
-	s.mux.Lock()
-	s.Events = append(s.Events, event)
-	s.mux.Unlock()
-}
-
-func (s *State) NextEvent() (*cot.Event, error) {
-	if len(s.Events) > 0 {
-
-		e := s.Events[0]
-		s.Events = s.Events[1:]
-
-		return &e, nil
-	}
-
-	return nil, fmt.Errorf("No event to dequeue")
 }
 
 func (s *State) QueueEventFromHttpRequest(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +45,6 @@ func (s *State) QueueEventFromHttpRequest(w http.ResponseWriter, r *http.Request
 		"lon":      event.Point.Longitude,
 	}).Debug()
 
-	s.QueueEvent(event)
+	s.Events <- event
 	w.WriteHeader(http.StatusCreated)
 }

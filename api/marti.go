@@ -43,6 +43,18 @@ type dataPackage struct {
 	Size               string `json:"Size"`
 }
 
+type clientData struct {
+	Callsign   string `json:"callsign"`
+	UID        string `json:"uid"`
+	LastEvent  string `json:"lastEventTime"`
+	LastStatus string `json:"lastStatus"`
+}
+type clientEndpoint struct {
+	APIVersion string       `json:"version"` // 2
+	Type       string       `json:"type"`    // com.x.marti.remote.ClientEndpoint
+	Clients    []clientData `json:"data"`
+}
+
 func getOutboundIP() string {
 	// note: this does not actually establish a connection
 	conn, err := net.Dial("udp", "8.8.8.8:80")
@@ -57,6 +69,7 @@ func getOutboundIP() string {
 }
 
 func getversionDetail() versionDetail {
+	// authenticated
 	v := getVersionString()
 	i := getOutboundIP()
 
@@ -72,6 +85,16 @@ func getversionDetail() versionDetail {
 	}
 }
 
+func getClients() clientEndpoint {
+	c := clientEndpoint{
+		APIVersion: Version,
+		Type:       "otaks.clients",
+	}
+	c.Clients = make([]clientData, 0)
+
+	return c
+}
+
 func getAPIVersionConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	v := getversionDetail()
@@ -85,9 +108,9 @@ func getAPIVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func getClientEndpoints(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	v := getVersionString()
-	w.Write([]byte(v))
+	w.Header().Set("Content-Type", "application/json")
+	c := getClients()
+	json.NewEncoder(w).Encode(c)
 }
 
 func getVideoLinks(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +157,39 @@ func getDataPackage(w http.ResponseWriter, r *http.Request) {
 
 func searchDataPackages(w http.ResponseWriter, r *http.Request) {
 	// TODO: actually search data packages
+
+	type searchResult struct {
+		UID                string `json:"UID"`
+		SubmissionDateTime string `json:"SubmissionDateTime"`
+		MIMEType           string `json:"MIMEType"`
+		Size               string `json:"Size"`
+		DownloadPath       string `json:"DownloadPath"`
+		SubmissionUser     string `json:"SubmissionUser"`
+		PrimaryKey         string `json:"PrimaryKey"`
+		Hash               string `json:"Hash"`
+		Name               string `json:"Name"`
+	}
+
+	type searchResults struct {
+		Count   int            `json:"resultCount"`
+		Results []searchResult `json:"results"`
+	}
+
 	w.Write([]byte(""))
+}
+
+func getKMLManifest(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+}
+
+func getKML(w http.ResponseWriter, r *http.Request) {
+	// param: cotType=a-u
+	// param: secago=60
+	w.WriteHeader(http.StatusNotFound)
+}
+
+func redirectWeb(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func getDataPackageStatus(w http.ResponseWriter, r *http.Request) {

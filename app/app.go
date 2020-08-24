@@ -1,7 +1,7 @@
 package app
 
 import (
-	"bytes"
+	"bufio"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -30,7 +30,7 @@ type Server struct {
 	shutdown chan struct{}
 
 	connections map[net.Conn]connectionData
-	events      []cot.Event
+	//events      chan cot.Event
 }
 
 // NewServer provides a new instance of the app server
@@ -45,7 +45,7 @@ func NewServer(state *state.State) *Server {
 func (srv *Server) init() {
 	srv.shutdown = make(chan struct{})
 	srv.connections = make(map[net.Conn]connectionData)
-	srv.events = make([]cot.Event, 0)
+	//srv.events = make(chan cot.Event)
 }
 
 // Run starts the app server
@@ -79,11 +79,13 @@ func (srv *Server) listen(ln net.Listener) error {
 		c, err := ln.Accept()
 		if err != nil {
 			if !srv.IsRunning() {
+				// handle server closing state
 				return nil
 			}
 
 			// handle transient issues
 			if neterr, ok := err.(net.Error); ok && neterr.Temporary() {
+				log.Tracef("network hiccup %v", err)
 				continue
 			}
 
@@ -102,13 +104,9 @@ func (srv *Server) listen(ln net.Listener) error {
 }
 
 func (srv *Server) retransmitEvents() {
+	log.Trace("beginning to transmit events")
 	for srv.IsRunning() {
-
-		event, err := srv.state.NextEvent()
-		if err != nil {
-			continue
-		}
-
+		event := <-srv.state.Events
 		for r := range srv.connections {
 			if r.RemoteAddr().String() == event.Origin {
 				continue
@@ -140,9 +138,8 @@ func (srv *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 
 	// handle keepalives
 	go func() {
+		time.Sleep(time.Second * 2)
 		for {
-			time.Sleep(time.Second * 15)
-
 			log.Tracef("sending ping event to %s", c.RemoteAddr().String())
 			pingEvent := cot.NewPingEvent()
 			e, err := xml.Marshal(pingEvent)
@@ -155,20 +152,26 @@ func (srv *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 				log.Error("problem sending ping event: ", err)
 				break
 			}
+
+			time.Sleep(time.Second * 15)
 		}
 	}()
 
+	r := bufio.NewReader(c)
 	for {
-		var buf bytes.Buffer
-		io.Copy(&buf, c)
-
-		if buf.Len() == 0 {
-			continue
+		log.Tracef("reading from", c.RemoteAddr())
+		b, err := r.ReadBytes(byte('\n'))
+		if err != nil {
+			if err != io.EOF {
+				log.Tracef("issue reading from conn. %v", err)
+			}
 		}
 
 		var event cot.Event
-		err := xml.Unmarshal(buf.Bytes(), &event)
-		if err != nil {
+		if xml.Unmarshal(b, &event) != nil {
+			if err == io.EOF {
+				break
+			}
 			log.Error("failed to interpret event", err)
 			continue
 		}
@@ -181,8 +184,8 @@ func (srv *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 		// }
 
 		log.WithFields(log.Fields{
-			"size": buf.Len(),
-			"raw":  buf.String(),
+			"size": len(b),
+			"raw":  string(b),
 		}).Trace()
 		log.WithFields(log.Fields{
 			"origin":   event.Origin,
@@ -193,9 +196,11 @@ func (srv *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 			"lat":      event.Point.Latitude,
 			"lon":      event.Point.Longitude,
 		}).Debug()
-		srv.events = append(srv.events, event)
+
+		// send the event to the queue
+		srv.state.Events <- event
 
 		//wtf
-		//c.Write(buf.Bytes())
+		//c.Write(b)
 	}
 }

@@ -48,8 +48,14 @@ func (srv *Server) Run() error {
 	router.HandleFunc("/Marti/vcm", getVideoLinks).Methods("GET")
 	router.HandleFunc("/Marti/vcm", insertVideoLink).Methods("POST")
 
+	router.HandleFunc("/Marti/KmlMasterSA", getKMLManifest).Methods("GET")
+	router.HandleFunc("/Marti/LatestKML", getKML).Methods("GET")
+
+	router.HandleFunc("/Marti/webtak", redirectWeb).Methods("GET")
+
 	// otaks rest api
 	router.HandleFunc("/otaks/events", srv.state.QueueEventFromHttpRequest).Methods("POST")
+	router.HandleFunc("/otaks/devices", OtaksNotImplementedYet).Methods("GET")
 
 	log.Trace("Initializing api server on :8080")
 	return http.ListenAndServe(":8080", router)

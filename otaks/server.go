@@ -94,9 +94,6 @@ func (s *Server) Run() error {
 	log.Tracef("Initializing api server")
 	s.apiServer = api.NewServer(s.State)
 
-	log.Tracef("Initializing chat server")
-	s.chatServer = chat.NewServer(s.State)
-
 	log.Tracef("Initializing web server")
 	s.webServer = web.NewServer(s.State)
 
@@ -113,15 +110,6 @@ func (s *Server) Run() error {
 	g.Add(func() error {
 		log.Tracef("Starting api server")
 		return s.apiServer.Run()
-	}, func(err error) {
-		if err != nil {
-			log.Error(err)
-		}
-	})
-
-	g.Add(func() error {
-		log.Tracef("Starting chat server")
-		return s.chatServer.Run()
 	}, func(err error) {
 		if err != nil {
 			log.Error(err)
