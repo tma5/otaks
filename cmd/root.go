@@ -20,16 +20,18 @@ var (
 const (
 	defaultConfigLocation = "/etc/otaks/otaks.toml"
 	defaultHost           = "0.0.0.0"
-	defaultPort           = 8087
+	defaultPort           = 8089
 	defaultLogLevel       = "INFO"
 )
 
+// RootCmd ...
 var RootCmd = &cobra.Command{
 	Use:   "otaks",
 	Short: "otaks",
 	Long:  ``,
 }
 
+// Execute ...
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		log.Print(err)
@@ -50,4 +52,5 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "l", defaultLogLevel, "log level [ERROR|WARN|INFO|DEBUG|TRACE]")
 
 	RootCmd.AddCommand(serveCmd)
+	RootCmd.AddCommand(manifestCmd)
 }

@@ -54,7 +54,7 @@ func (srv *Server) Run() error {
 	router.HandleFunc("/Marti/webtak", redirectWeb).Methods("GET")
 
 	// otaks rest api
-	router.HandleFunc("/otaks/events", srv.state.QueueEventFromHttpRequest).Methods("POST")
+	router.HandleFunc("/otaks/events", srv.state.QueueEventFromHTTPRequest).Methods("POST")
 	router.HandleFunc("/otaks/devices", OtaksNotImplementedYet).Methods("GET")
 
 	log.Trace("Initializing api server on :8080")

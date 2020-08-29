@@ -5,7 +5,7 @@ services:
   otaks:
     build: .
     ports:
-      - "8087/tcp"
-      - "8087/udp"
+      - "8089/tcp"
+      - "8089/udp"
       - "8080"
       - "8888"

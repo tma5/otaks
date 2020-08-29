@@ -10,12 +10,14 @@ import (
 	"github.com/tma5/otaks/cot"
 )
 
+// State ...
 type State struct {
 	Config *config.Config
 	mux    sync.Mutex
 	Events chan cot.Event
 }
 
+// NewState ...
 func NewState(config *config.Config) *State {
 	state := &State{
 		Config: config,
@@ -25,7 +27,8 @@ func NewState(config *config.Config) *State {
 	return state
 }
 
-func (s *State) QueueEventFromHttpRequest(w http.ResponseWriter, r *http.Request) {
+// QueueEventFromHttpRequest ...
+func (s *State) QueueEventFromHTTPRequest(w http.ResponseWriter, r *http.Request) {
 	var event cot.Event
 	if err := xml.NewDecoder(r.Body).Decode(&event); err != nil {
 		w.WriteHeader(http.StatusBadRequest)

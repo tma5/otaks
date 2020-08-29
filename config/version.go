@@ -7,22 +7,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const Version = "undefined"
+// Version captures the current version
+const Version = "0.1.1"
 
 func getVersionString() string {
 	return fmt.Sprintf("otaks-%s", Version)
 }
 
+// VersionDetail ...
 type VersionDetail struct {
-	ApiVersion string            `json:"version"`
+	APIVersion string            `json:"version"`
 	Type       string            `json:"type"`
 	Data       VersionDetailData `json:"data"`
 	Node       string            `json:"nodeId"`
 }
 
+// VersionDetailData ...
 type VersionDetailData struct {
 	OtaksVersion string `json:"version"`
-	ApiVersion   string `json:"api"`
+	APIVersion   string `json:"api"`
 	Hostname     string `json:"hostname"`
 }
 
@@ -44,11 +47,11 @@ func getVersionDetail() VersionDetail {
 	i := getOutboundIP()
 
 	return VersionDetail{
-		ApiVersion: "2",
+		APIVersion: "2",
 		Type:       "ServerConfig",
 		Data: VersionDetailData{
 			OtaksVersion: v,
-			ApiVersion:   "2",
+			APIVersion:   "2",
 			Hostname:     i,
 		},
 		Node: "otaks",

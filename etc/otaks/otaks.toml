@@ -3,11 +3,20 @@
 #
 
 [server]
+# name
+name = "otaks-dev"
+
+# description
+description = "OTAKS Test Server"
+
+# domain
+domain = "dev.zxcvzxvc.com"
+
 # address to bind
 host = ""
 
     [server.app]
-    port = 8087
+    port = 8089
 
     [server.api]
     port = 8080
@@ -23,6 +32,12 @@ host = ""
     # server log location
     # *only stdout supported*
     #location = "stdout"
+
+    # [server.tls]
+    # enabled = false
+    # truststore = ""
+    # keystore = ""
+
 
 [federation]
 enabled = false

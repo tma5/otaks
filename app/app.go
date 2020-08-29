@@ -59,9 +59,10 @@ func (srv *Server) IsRunning() bool {
 }
 
 func (srv *Server) listenAndServe() error {
-	log.Trace("Starting app server on :8087")
+	p := fmt.Sprintf(":%d", srv.state.Config.Server.App.Port)
+	log.Tracef("Starting app server on %s", p)
 	srv.started = true
-	ln, err := net.Listen("tcp", ":8087")
+	ln, err := net.Listen("tcp", p)
 	if err != nil {
 		return err
 	}
@@ -159,7 +160,7 @@ func (srv *Server) handleConnection(wg *sync.WaitGroup, c net.Conn) {
 
 	r := bufio.NewReader(c)
 	for {
-		log.Tracef("reading from", c.RemoteAddr())
+		log.Tracef("reading from %v", c.RemoteAddr())
 		b, err := r.ReadBytes(byte('\n'))
 		if err != nil {
 			if err != io.EOF {

@@ -61,9 +61,9 @@ compile-deps:
 	@echo "=== [ compile-deps ]: installing build dependencies"
 	@go get -v -d -t ./...
 
-bin/otaks: 
+bin/otaks:
 	@echo "=== [ compile ]: building otaks"
-	@env CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) go build -a -installsuffix cgo -v -o bin/otaks $(GO_FILES)
+	@env CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) go build -tags netgo -a -installsuffix -v -o bin/otaks $(GO_FILES)
 
 compile: compile-deps bin/otaks
 
@@ -83,7 +83,7 @@ test: test-deps test-source
 
 install: bin/otaks
 	@echo "=== [ install ]: installing bin/otaks"
-	@install -D --mode=755 --owner=root $(ROOT)bin/otaks /usr/local/bin/otaks
-	@install -D --mode=644 --owner=root $(ROOT)/etc/otaks/otaks.toml /etc/otaks/otaks.toml
+	@install --mode=755 --owner=root $(ROOT)bin/otaks /usr/local/bin/otaks
+	@install --mode=644 --owner=root $(ROOT)/etc/otaks/otaks.toml /etc/otaks/otaks.toml
 
 .PHONY: all build clean validate-deps validate-source validate compile-deps compile install

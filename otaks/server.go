@@ -32,9 +32,7 @@ type Server struct {
 func NewServer(config *config.Config) (*Server, error) {
 	s := new(Server)
 	s.State = state.NewState(config)
-	log.Printf("%+v", s.State)
 	log.SetOutput(os.Stdout)
-	log.Printf("s.State.Config.Server.Logging.Level: %s")
 	logLevel, err := log.ParseLevel(s.State.Config.Server.Logging.Level)
 	if err != nil {
 		log.Error("problem setting loglevel", err)
@@ -67,17 +65,17 @@ func signalHandler() {
 			sigv := <-sigc
 			switch sigv {
 			case syscall.SIGINT:
-				log.Infof("SIGINT received, stopping...")
+				log.Info("SIGINT received, stopping...")
 				exit <- 0
 			case syscall.SIGHUP:
 				// TODO: Implement SIGHUP
-				log.Infof("SIGHUP received, reloading...")
-				log.Warnf("Not yet implemented!")
+				log.Info("SIGHUP received, reloading...")
+				log.Warn("Not yet implemented!")
 			case syscall.SIGTERM:
-				log.Infof("SIGTERM received, stopping...")
+				log.Info("SIGTERM received, stopping...")
 				exit <- 0
 			default:
-				log.Errorf("Signal received, unknown type")
+				log.Error("Signal received, unknown type")
 			}
 		}
 	}()

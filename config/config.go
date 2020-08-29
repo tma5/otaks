@@ -7,10 +7,14 @@ import (
 )
 
 type serverConfig struct {
-	Host    string              `toml:"host"`
-	App     serverAppConfig     `toml:"app"`
-	API     serverAPIConfig     `toml:"api"`
-	Logging serverLoggingConfig `toml:"logging"`
+	Name        string              `toml:"name"`
+	Description string              `toml:"description"`
+	Domain      string              `toml:"domain"`
+	Host        string              `toml:"host"`
+	TLS         serverTLSConfig     `toml:"tls"`
+	App         serverAppConfig     `toml:"app"`
+	API         serverAPIConfig     `toml:"api"`
+	Logging     serverLoggingConfig `toml:"logging"`
 }
 
 type serverAppConfig struct {
@@ -26,6 +30,14 @@ type serverLoggingConfig struct {
 	Location string `toml:"location"`
 }
 
+type serverTLSConfig struct {
+	Enabled        bool   `toml:"enabled"`
+	TruststorePath string `toml:"truststore"`
+	KeystorePath   string `toml:"keystore"`
+	Truststore     []byte
+	Keystore       []byte
+}
+
 // Config describes the otaks configuration
 type Config struct {
 	Server serverConfig `toml:"server"`
@@ -36,6 +48,7 @@ func NewConfig(configPath string) (*Config, error) {
 	return LoadConfigFile(configPath)
 }
 
+// LoadConfigFile ...
 func LoadConfigFile(path string) (*Config, error) {
 	var c Config
 	data, err := ioutil.ReadFile(path)
